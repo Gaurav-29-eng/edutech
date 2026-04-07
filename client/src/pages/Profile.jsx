@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function Profile() {
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -20,7 +22,7 @@ function Profile() {
       if (!token) return;
       
       try {
-        const response = await axios.get('http://localhost:5003/api/auth/admin/upi', {
+        const response = await axios.get(`${API}/api/auth/admin/upi`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setDefaultUpi(response.data.defaultUpiId || '');
@@ -40,7 +42,7 @@ function Profile() {
     const token = localStorage.getItem('token');
     try {
       await axios.put(
-        'http://localhost:5003/api/auth/admin/upi',
+        `${API}/api/auth/admin/upi`,
         { defaultUpiId: defaultUpi.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -70,8 +72,8 @@ function Profile() {
     const token = localStorage.getItem('token');
 
     try {
-      await axios.put(
-        'http://localhost:5003/api/auth/change-password',
+      const response = await axios.put(
+        `${API}/api/auth/change-password`,
         {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword

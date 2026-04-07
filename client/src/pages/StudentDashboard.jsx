@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function StudentDashboard() {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [progress, setProgress] = useState({});
@@ -17,7 +19,7 @@ function StudentDashboard() {
   const fetchEnrolledCourses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.get('http://localhost:5003/api/courses/my/enrolled', {
+      const response = await axios.get(`${API}/api/courses/my/enrolled`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

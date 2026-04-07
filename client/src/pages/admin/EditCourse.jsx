@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 
+const API = import.meta.env.VITE_API_URL;
+
 function EditCourse() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -30,7 +32,7 @@ function EditCourse() {
   const fetchCourse = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.get(`http://localhost:5003/api/courses/${id}`, {
+      const response = await axios.get(`${API}/api/courses/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const course = response.data.course;
@@ -73,7 +75,7 @@ function EditCourse() {
     if (thumbnail) data.append('thumbnail', thumbnail);
 
     try {
-      await axios.put(`http://localhost:5003/api/courses/${id}`, data, {
+      await axios.put(`${API}/api/courses/${id}`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
@@ -93,7 +95,7 @@ function EditCourse() {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5003/api/courses/${id}/lectures/${lectureId}`, {
+      await axios.delete(`${API}/api/courses/${id}/lectures/${lectureId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('Lecture deleted successfully');
@@ -106,7 +108,7 @@ function EditCourse() {
   const handleUpdateLecture = async (lectureId, updatedData) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5003/api/courses/${id}/lectures/${lectureId}`, updatedData, {
+      await axios.put(`${API}/api/courses/${id}/lectures/${lectureId}`, updatedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('Lecture updated successfully');

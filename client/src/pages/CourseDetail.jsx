@@ -6,6 +6,8 @@ import axios from 'axios';
 import VideoPlayer from '../components/VideoPlayer';
 import AdminUpload from '../components/AdminUpload';
 
+const API = import.meta.env.VITE_API_URL;
+
 // Status Badge Component
 function StatusBadge({ status }) {
   const styles = {
@@ -67,14 +69,14 @@ function CourseDetail() {
 
   const fetchCourse = async () => {
     try {
-      const response = await axios.get(`http://localhost:5003/api/courses/${id}`);
+      const response = await axios.get(`${API}/api/courses/${id}`);
       setCourse(response.data.course);
       
       // Check payment status if logged in
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const paymentRes = await axios.get(`http://localhost:5003/api/payments/status/${id}`, {
+          const paymentRes = await axios.get(`${API}/api/payments/status/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setPaymentStatus(paymentRes.data.status);
@@ -111,7 +113,7 @@ function CourseDetail() {
     const token = localStorage.getItem('token');
     try {
       await axios.post(
-        `http://localhost:5003/api/courses/${id}/enroll`,
+        `${API}/api/courses/${id}/enroll`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -139,7 +141,7 @@ function CourseDetail() {
     formData.append('courseId', id);
 
     try {
-      await axios.post('http://localhost:5003/api/payments', formData, {
+      await axios.post(`${API}/api/payments`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`

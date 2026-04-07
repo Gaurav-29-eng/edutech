@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function UploadLecture() {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -18,7 +20,7 @@ function UploadLecture() {
   const fetchCourses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.get('http://localhost:5003/api/courses', {
+      const response = await axios.get(`${API}/api/courses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(response.data.courses || []);
@@ -58,16 +60,12 @@ function UploadLecture() {
     if (notesFile) formData.append('notes', notesFile);
 
     try {
-      await axios.post(
-        `http://localhost:5003/api/courses/${selectedCourse}/lectures`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axios.post(`${API}/api/courses/${selectedCourse}/lectures`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setMessage('Lecture added successfully!');
       setTitle('');
       setVideoUrl('');

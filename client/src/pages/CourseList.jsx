@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function CourseList() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ function CourseList() {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:5003/api/courses');
+      const response = await axios.get(`${API}/api/courses`);
       setCourses(response.data.courses);
     } catch (error) {
       console.error('Error fetching courses:', error);

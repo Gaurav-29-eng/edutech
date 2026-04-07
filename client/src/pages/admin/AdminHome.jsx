@@ -3,6 +3,8 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+const API = import.meta.env.VITE_API_URL;
+
 function AdminHome() {
   const [stats, setStats] = useState({
     totalCourses: 0,
@@ -20,10 +22,10 @@ function AdminHome() {
     const token = localStorage.getItem('token');
     try {
       const [coursesRes, usersRes] = await Promise.all([
-        axios.get('http://localhost:5003/api/courses', {
+        axios.get(`${API}/api/courses`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:5003/api/auth/users', {
+        axios.get(`${API}/api/auth/users`, {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(() => ({ data: { users: [] } })),
       ]);

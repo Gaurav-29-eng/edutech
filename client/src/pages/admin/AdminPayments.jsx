@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function AdminPayments() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ function AdminPayments() {
   const fetchPayments = async () => {
     const token = localStorage.getItem('token');
     try {
-      const url = filter ? `http://localhost:5003/api/payments?status=${filter}` : 'http://localhost:5003/api/payments';
+      const url = filter ? `${API}/api/payments?status=${filter}` : `${API}/api/payments`;
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -31,7 +33,7 @@ function AdminPayments() {
   const handleApprove = async (paymentId) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5003/api/payments/${paymentId}/approve`, {}, {
+      await axios.put(`${API}/api/payments/${paymentId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Payment approved! Student now has access.');
@@ -49,7 +51,7 @@ function AdminPayments() {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5003/api/payments/${paymentId}/reject`, 
+      await axios.put(`${API}/api/payments/${paymentId}/reject`, 
         { reason: rejectionReason },
         { headers: { Authorization: `Bearer ${token}` } }
       );

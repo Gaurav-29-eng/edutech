@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function Signup() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ function Signup() {
     try {
       // Force role to be student for public signup
       const signupData = { ...formData, role: 'student' };
-      const response = await axios.post('http://localhost:5003/api/auth/signup', signupData);
+      const response = await axios.post(`${API}/api/auth/signup`, signupData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       window.dispatchEvent(new Event('userChanged'));

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+const API = import.meta.env.VITE_API_URL;
+
 function AdminCourses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +16,7 @@ function AdminCourses() {
   const fetchCourses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.get('http://localhost:5003/api/courses', {
+      const response = await axios.get(`${API}/api/courses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(response.data.courses || []);
@@ -28,7 +30,7 @@ function AdminCourses() {
   const handleDelete = async (courseId) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5003/api/courses/${courseId}`, {
+      await axios.delete(`${API}/api/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(courses.filter(c => c._id !== courseId));

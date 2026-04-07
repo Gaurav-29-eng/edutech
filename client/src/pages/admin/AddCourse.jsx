@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 
+const API = import.meta.env.VITE_API_URL;
+
 function AddCourse() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
@@ -17,7 +19,7 @@ function AddCourse() {
     const fetchGlobalUpi = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await axios.get('http://localhost:5003/api/auth/admin/upi', {
+        const response = await axios.get(`${API}/api/auth/admin/upi`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setGlobalUpi(response.data.defaultUpiId || '');
@@ -47,7 +49,7 @@ function AddCourse() {
     if (thumbnail) data.append('thumbnail', thumbnail);
 
     try {
-      await axios.post('http://localhost:5003/api/courses', data, {
+      await axios.post(`${API}/api/courses`, data, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function AdminUpload({ courseId, onUploadSuccess }) {
   const [title, setTitle] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -42,7 +44,7 @@ function AdminUpload({ courseId, onUploadSuccess }) {
 
     try {
       const response = await axios.post(
-        `http://localhost:5003/api/courses/${courseId}/lectures`,
+        `${API}/api/courses/${courseId}/lectures`,
         formData,
         {
           headers: {

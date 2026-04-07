@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_URL;
+
 function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,7 @@ function AdminUsers() {
   const fetchUsers = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.get('http://localhost:5003/api/auth/users', {
+      const response = await axios.get(`${API}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data.users || []);
@@ -34,7 +36,7 @@ function AdminUsers() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      await axios.post('http://localhost:5003/api/auth/create-admin', newAdmin, {
+      await axios.post(`${API}/api/auth/create-admin`, newAdmin, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('Admin created successfully!');
@@ -49,7 +51,7 @@ function AdminUsers() {
   const handleDeleteUser = async (userId) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:5003/api/auth/users/${userId}`, {
+      await axios.delete(`${API}/api/auth/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('User deleted successfully!');
