@@ -21,6 +21,7 @@ router.get('/', async (req, res) => {
       .select('-lectures.videoUrl -lectures.notesUrl');
     res.json({ courses });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -46,6 +47,7 @@ router.get('/:id', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -85,6 +87,7 @@ router.post('/', protect, adminOnly, uploadThumbnail.single('thumbnail'), async 
       }
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -119,6 +122,7 @@ router.post('/:id/lectures', protect, adminOnly, uploadNotes.single('notes'), as
       course
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -161,6 +165,7 @@ router.post('/:id/enroll', protect, async (req, res) => {
     
     res.json({ message: 'Enrolled successfully', course });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -184,6 +189,7 @@ router.get('/my/enrolled', protect, async (req, res) => {
     
     res.json({ courses });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -221,6 +227,7 @@ router.put('/:id', protect, adminOnly, uploadThumbnail.single('thumbnail'), asyn
       }
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -253,6 +260,7 @@ router.put('/:id/lectures/:lectureId', protect, adminOnly, uploadNotes.single('n
       course
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -282,6 +290,7 @@ router.delete('/:id/lectures/:lectureId', protect, adminOnly, async (req, res) =
       course
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -299,6 +308,7 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
     
     res.json({ message: 'Course deleted successfully' });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -309,6 +319,7 @@ router.get('/:id/lectures', protect, checkCourseAccess, async (req, res) => {
     const course = req.course;
     res.json({ lectures: course.lectures });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -325,6 +336,7 @@ router.get('/:id/lectures/:lectureId', protect, checkCourseAccess, async (req, r
     
     res.json({ lecture });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -359,6 +371,7 @@ router.get('/:id/access', protect, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

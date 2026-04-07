@@ -9,13 +9,53 @@ router.post('/signup', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     
-    const existingUser = await User.findOne({ email });
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Missing required fields',
+        errors: {
+          name: !name ? 'Name is required' : undefined,
+          email: !email ? 'Email is required' : undefined,
+          password: !password ? 'Password is required' : undefined
+        }
+      });
+    }
+    
+    // Validate field types
+    if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Invalid field types' });
+    }
+    
+    // Trim and validate email format
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+    
+    if (trimmedName.length < 2) {
+      return res.status(400).json({ message: 'Name must be at least 2 characters' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+    
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+    
+    const existingUser = await User.findOne({ email: trimmedEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
     
     // Force role to be student for public signup - ignore any role sent
-    const user = new User({ name, email, password, role: 'student' });
+    const user = new User({ 
+      name: trimmedName, 
+      email: trimmedEmail, 
+      password, 
+      role: 'student' 
+    });
     await user.save();
     
     const token = generateToken(user._id, user.role);
@@ -25,6 +65,7 @@ router.post('/signup', async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -33,7 +74,25 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const user = await User.findOne({ email });
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ 
+        message: 'Missing required fields',
+        errors: {
+          email: !email ? 'Email is required' : undefined,
+          password: !password ? 'Password is required' : undefined
+        }
+      });
+    }
+    
+    // Validate field types
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Invalid field types' });
+    }
+    
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    const user = await User.findOne({ email: trimmedEmail });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -50,6 +109,7 @@ router.post('/login', async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -59,6 +119,7 @@ router.get('/me', protect, async (req, res) => {
     const user = await User.findById(req.userId).select('-password');
     res.json({ user });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -73,6 +134,7 @@ router.get('/users', protect, adminOnly, async (req, res) => {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json({ users });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -95,6 +157,7 @@ router.post('/create-admin', protect, adminOnly, async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -116,6 +179,7 @@ router.delete('/users/:id', protect, adminOnly, async (req, res) => {
     
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -142,6 +206,7 @@ router.put('/change-password', protect, async (req, res) => {
     
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -152,6 +217,7 @@ router.get('/admin/upi', protect, adminOnly, async (req, res) => {
     const user = await User.findById(req.userId).select('defaultUpiId');
     res.json({ defaultUpiId: user.defaultUpiId || '' });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -172,6 +238,7 @@ router.put('/admin/upi', protect, adminOnly, async (req, res) => {
       defaultUpiId: user.defaultUpiId 
     });
   } catch (error) {
+    console.error('Auth route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

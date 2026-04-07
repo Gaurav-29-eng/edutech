@@ -49,6 +49,7 @@ router.post('/', protect, uploadPaymentScreenshot.single('screenshot'), async (r
       payment
     });
   } catch (error) {
+    console.error('Payment route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -67,6 +68,7 @@ router.get('/', protect, adminOnly, async (req, res) => {
 
     res.json({ payments });
   } catch (error) {
+    console.error('Payment route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -80,6 +82,7 @@ router.get('/my', protect, async (req, res) => {
 
     res.json({ payments });
   } catch (error) {
+    console.error('Payment route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -106,6 +109,7 @@ router.get('/status/:courseId', protect, async (req, res) => {
         : 'Payment rejected. Please submit a new payment.'
     });
   } catch (error) {
+    console.error('Payment route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -154,6 +158,7 @@ router.put('/:id/approve', protect, adminOnly, async (req, res) => {
 
     res.json({ message: 'Payment approved and student enrolled', payment });
   } catch (error) {
+    console.error('Payment route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -180,6 +185,7 @@ router.put('/:id/reject', protect, adminOnly, async (req, res) => {
 
     res.json({ message: 'Payment rejected', payment });
   } catch (error) {
+    console.error('Payment route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
