@@ -176,18 +176,92 @@ router.get('/my/enrolled', protect, async (req, res) => {
     const user = await User.findById(req.userId)
       .populate({
         path: 'enrolledCourses.course',
-        populate: { path: 'instructor', select: 'name email' }
+        populate: { 
+          path: 'instructor', 
+          select: 'name email' 
+        }
       });
     
-    const courses = user.enrolledCourses.map(ec => ({
-      ...ec.course.toObject(),
-      enrolledAt: ec.enrolledAt,
-      progress: ec.progress,
-      completedLectures: ec.completedLectures,
-      lastWatchedLecture: ec.lastWatchedLecture
-    }));
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const courses = user.enrolledCourses.map(ec => {
+      const courseData = ec.course ? ec.course.toObject() : {};
+      const totalLectures = courseData.lectures?.length || 0;
+      const completedCount = ec.completedLectures?.length || 0;
+      const progressPercent = totalLectures > 0 
+        ? Math.round((completedCount / totalLectures) * 100) 
+        : 0;
+      
+      return {
+        ...courseData,
+        enrolledAt: ec.enrolledAt,
+        progress: progressPercent,
+        completedLectures: ec.completedLectures || [],
+        lastWatchedLecture: ec.lastWatchedLecture,
+        totalLectures,
+        completedCount
+      };
+    }).filter(c => c._id); // Filter out null courses
     
     res.json({ courses });
+  } catch (error) {
+    console.error('Course route error:', error);
+    res.status(500).json({ message: 'Server error fetching enrolled courses', error: error.message });
+  }
+});
+
+// Get resume lecture for a course (protected)
+router.get('/:id/resume', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const course = await Course.findById(req.params.id);
+    
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Check if user is enrolled
+    const enrolledCourse = user.enrolledCourses.find(
+      ec => ec.course.toString() === req.params.id
+    );
+    
+    if (!enrolledCourse) {
+      return res.status(403).json({ message: 'Not enrolled in this course' });
+    }
+    
+    const lectures = course.lectures || [];
+    if (lectures.length === 0) {
+      return res.status(404).json({ message: 'No lectures available' });
+    }
+    
+    // Find next lecture to watch
+    let nextLecture = null;
+    let nextIndex = 0;
+    
+    if (enrolledCourse.lastWatchedLecture) {
+      const lastIndex = lectures.findIndex(
+        l => l._id.toString() === enrolledCourse.lastWatchedLecture.toString()
+      );
+      if (lastIndex >= 0 && lastIndex < lectures.length - 1) {
+        nextIndex = lastIndex + 1;
+      } else if (lastIndex >= 0) {
+        nextIndex = lastIndex; // Resume from last watched
+      }
+    }
+    
+    nextLecture = lectures[nextIndex];
+    const completedLectures = enrolledCourse.completedLectures || [];
+    
+    res.json({
+      lecture: nextLecture,
+      lectureIndex: nextIndex,
+      totalLectures: lectures.length,
+      completedLectures: completedLectures.length,
+      isCompleted: completedLectures.includes(nextLecture._id.toString()),
+      progress: Math.round((completedLectures.length / lectures.length) * 100)
+    });
   } catch (error) {
     console.error('Course route error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
