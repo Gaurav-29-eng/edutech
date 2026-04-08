@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -12,6 +13,7 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // Countdown timer for resend OTP
   useEffect(() => {
@@ -136,9 +138,8 @@ function Signup() {
         role: 'student'
       });
 
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      window.dispatchEvent(new Event('userChanged'));
+      // Use AuthContext login function
+      login(response.data.user, response.data.token);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed');

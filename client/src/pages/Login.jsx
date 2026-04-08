@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -8,6 +9,7 @@ function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,9 +20,9 @@ function Login() {
     setError('');
     try {
       const response = await axios.post(`${API}/api/auth/login`, formData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      window.dispatchEvent(new Event('userChanged'));
+      
+      // Use AuthContext login function - this updates state immediately
+      login(response.data.user, response.data.token);
       
       // Update study streak on login (fire and forget)
       try {

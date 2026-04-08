@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 function Navbar() {
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -18,27 +19,6 @@ function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    const checkUser = () => {
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        setUser(JSON.parse(stored));
-      } else {
-        setUser(null);
-      }
-    };
-    
-    checkUser();
-    
-    window.addEventListener('storage', checkUser);
-    window.addEventListener('userChanged', checkUser);
-    
-    return () => {
-      window.removeEventListener('storage', checkUser);
-      window.removeEventListener('userChanged', checkUser);
-    };
-  }, [location]);
 
   // Close mobile menu and dropdown on route change
   useEffect(() => {
@@ -61,12 +41,9 @@ function Navbar() {
   const isAdmin = user?.role === 'admin';
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+    logout();
     setMobileMenuOpen(false);
     setDropdownOpen(false);
-    window.dispatchEvent(new Event('userChanged'));
     window.location.href = '/';
   };
 
