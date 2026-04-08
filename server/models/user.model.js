@@ -18,6 +18,22 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  phone: {
+    type: String,
+    unique: true,
+    sparse: true,
+    validate: {
+      validator: function(v) {
+        if (!v) return true; // Allow empty for backward compatibility
+        return /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(v);
+      },
+      message: 'Please enter a valid phone number'
+    }
+  },
+  phoneVerified: {
+    type: Boolean,
+    default: false
+  },
   role: {
     type: String,
     enum: ['student', 'admin'],

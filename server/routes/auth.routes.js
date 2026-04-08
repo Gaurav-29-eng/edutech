@@ -1,5 +1,6 @@
 import express from 'express';
 import User from '../models/user.model.js';
+import OTP from '../models/otp.model.js';
 import { generateToken } from '../utils/jwt.js';
 import { protect, adminOnly } from '../middleware/auth.middleware.js';
 
@@ -7,28 +8,30 @@ const router = express.Router();
 
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone } = req.body;
     
     // Validate required fields
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phone) {
       return res.status(400).json({ 
         message: 'Missing required fields',
         errors: {
           name: !name ? 'Name is required' : undefined,
           email: !email ? 'Email is required' : undefined,
-          password: !password ? 'Password is required' : undefined
+          password: !password ? 'Password is required' : undefined,
+          phone: !phone ? 'Phone number is required' : undefined
         }
       });
     }
     
     // Validate field types
-    if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+    if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string' || typeof phone !== 'string') {
       return res.status(400).json({ message: 'Invalid field types' });
     }
     
     // Trim and validate email format
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedName = name.trim();
+    const trimmedPhone = phone.trim();
     
     if (trimmedName.length < 2) {
       return res.status(400).json({ message: 'Name must be at least 2 characters' });
@@ -38,10 +41,15 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
     
-    // Simple email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
       return res.status(400).json({ message: 'Invalid email format' });
+    }
+    
+    // Phone validation
+    const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+    if (!phoneRegex.test(trimmedPhone)) {
+      return res.status(400).json({ message: 'Invalid phone number format' });
     }
     
     const existingUser = await User.findOne({ email: trimmedEmail });
@@ -49,12 +57,19 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
     
-    // Force role to be student for public signup - ignore any role sent
-    const user = new User({ 
-      name: trimmedName, 
-      email: trimmedEmail, 
-      password, 
-      role: 'student' 
+    const existingPhone = await User.findOne({ phone: trimmedPhone });
+    if (existingPhone) {
+      return res.status(400).json({ message: 'Phone number already registered' });
+    }
+
+    // Create new user
+    const user = new User({
+      name: trimmedName,
+      email: trimmedEmail,
+      password,
+      phone: trimmedPhone,
+      phoneVerified: true,
+      role: 'student'
     });
     await user.save();
     
@@ -110,6 +125,57 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Auth route error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// OTP-based login (alternative to password)
+router.post('/login/otp', async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    
+    if (!phone || !otp) {
+      return res.status(400).json({ message: 'Phone and OTP are required' });
+    }
+    
+    // Verify OTP
+    const otpRecord = await OTP.findOne({ phone, purpose: 'login' });
+    
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'OTP expired or invalid' });
+    }
+    
+    if (otpRecord.attempts >= 3) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ message: 'Too many failed attempts' });
+    }
+    
+    if (otpRecord.otp !== otp) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      const remaining = 3 - otpRecord.attempts;
+      return res.status(400).json({ message: `Invalid OTP. ${remaining} attempts left` });
+    }
+    
+    // OTP verified - find user and login
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Delete verified OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+    
+    const token = generateToken(user._id, user.role);
+    
+    res.json({
+      message: 'Login successful',
+      token,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+    
+  } catch (error) {
+    console.error('OTP login error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
