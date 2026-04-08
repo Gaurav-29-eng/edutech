@@ -243,4 +243,42 @@ router.put('/admin/upi', protect, adminOnly, async (req, res) => {
   }
 });
 
+// Admin dashboard stats (admin only)
+router.get('/admin/dashboard', protect, adminOnly, async (req, res) => {
+  try {
+    const Course = (await import('../models/course.model.js')).default;
+    const Payment = (await import('../models/payment.model.js')).default;
+    
+    // Get counts
+    const totalUsers = await User.countDocuments();
+    const totalCourses = await Course.countDocuments();
+    const totalEnrollments = await User.aggregate([
+      { $unwind: '$enrolledCourses' },
+      { $count: 'total' }
+    ]).then(result => result[0]?.total || 0);
+    
+    // Get pending payments count
+    const pendingPayments = await Payment.countDocuments({ status: 'pending' });
+    
+    // Get recent users (last 10)
+    const recentUsers = await User.find()
+      .select('name email role createdAt')
+      .sort({ createdAt: -1 })
+      .limit(10);
+    
+    res.json({
+      stats: {
+        totalUsers,
+        totalCourses,
+        totalEnrollments,
+        pendingPayments
+      },
+      recentUsers
+    });
+  } catch (error) {
+    console.error('Auth route error:', error);
+    res.status(500).json({ message: 'Server error fetching dashboard stats', error: error.message });
+  }
+});
+
 export default router;
