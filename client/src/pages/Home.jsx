@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 
-// Deployment trigger: v1.1 - Force deploy
+// Deployment trigger: v1.2 - GitHub push
 function Home() {
   // Smooth scroll behavior
   useEffect(() => {
