@@ -281,4 +281,73 @@ router.get('/admin/dashboard', protect, adminOnly, async (req, res) => {
   }
 });
 
+// Update study streak (protected) - Call when user watches lecture or logs in
+router.post('/streak', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const streakResult = user.updateStreak();
+    
+    // Only save if streak was updated
+    if (streakResult.isNew) {
+      await user.save();
+    }
+    
+    res.json({
+      streak: user.streakCount,
+      longestStreak: user.longestStreak,
+      lastActiveDate: user.lastActiveDate,
+      message: streakResult.message,
+      isNew: streakResult.isNew,
+      reset: streakResult.reset || false
+    });
+  } catch (error) {
+    console.error('Auth route error:', error);
+    res.status(500).json({ message: 'Server error updating streak', error: error.message });
+  }
+});
+
+// Get streak info (protected)
+router.get('/streak', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('streakCount longestStreak lastActiveDate');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check if streak is still active (not broken)
+    let isStreakActive = false;
+    let daysSinceLastActive = null;
+    
+    if (user.lastActiveDate) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const lastActive = new Date(user.lastActiveDate);
+      const lastActiveDay = new Date(lastActive.getFullYear(), lastActive.getMonth(), lastActive.getDate());
+      
+      const diffTime = today - lastActiveDay;
+      daysSinceLastActive = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      // Streak is active if last active was today or yesterday
+      isStreakActive = daysSinceLastActive <= 1;
+    }
+    
+    res.json({
+      streak: user.streakCount,
+      longestStreak: user.longestStreak,
+      lastActiveDate: user.lastActiveDate,
+      isStreakActive,
+      daysSinceLastActive
+    });
+  } catch (error) {
+    console.error('Auth route error:', error);
+    res.status(500).json({ message: 'Server error fetching streak', error: error.message });
+  }
+});
+
 export default router;

@@ -10,12 +10,15 @@ function StudentDashboard() {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({ totalCourses: 0, completedLectures: 0, inProgress: 0 });
   const [resumingCourse, setResumingCourse] = useState(null);
+  const [streak, setStreak] = useState({ count: 0, longest: 0, isActive: false });
   
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     fetchEnrolledCourses();
+    fetchStreak();
+    updateStreakOnLoad();
   }, []);
 
   const fetchEnrolledCourses = async () => {
@@ -50,6 +53,40 @@ function StudentDashboard() {
       setError(err.response?.data?.message || 'Failed to load your courses. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStreak = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+      const response = await axios.get(`${API}/api/auth/streak`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStreak({
+        count: response.data.streak || 0,
+        longest: response.data.longestStreak || 0,
+        isActive: response.data.isStreakActive || false
+      });
+    } catch (err) {
+      console.error('Error fetching streak:', err);
+    }
+  };
+
+  const updateStreakOnLoad = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+      // Update streak when dashboard loads (user is active)
+      await axios.post(`${API}/api/auth/streak`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Refresh streak data
+      fetchStreak();
+    } catch (err) {
+      console.error('Error updating streak:', err);
     }
   };
 
@@ -144,7 +181,7 @@ function StudentDashboard() {
         )}
 
         {/* Stats Cards - Mobile: Scrollable Horizontal */}
-        <div className="flex sm:grid sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex sm:grid sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 min-w-[140px] sm:min-w-0 flex-shrink-0">
             <div className="flex items-center">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -155,6 +192,35 @@ function StudentDashboard() {
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Enrolled</p>
                 <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Streak Card */}
+          <div className={`rounded-xl shadow-sm p-4 sm:p-5 min-w-[140px] sm:min-w-0 flex-shrink-0 ${
+            streak.isActive ? 'bg-orange-50 border border-orange-200' : 'bg-white'
+          }`}>
+            <div className="flex items-center">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mr-3 ${
+                streak.isActive ? 'bg-orange-100' : 'bg-gray-100'
+              }`}>
+                <svg className={`w-5 h-5 sm:w-6 sm:h-6 ${streak.isActive ? 'text-orange-600' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                </svg>
+              </div>
+              <div>
+                <p className={`text-xs sm:text-sm ${streak.isActive ? 'text-orange-600' : 'text-gray-500'}`}>
+                  {streak.isActive ? '🔥 Streak' : 'Streak'}
+                </p>
+                <p className={`text-xl sm:text-2xl font-bold ${streak.isActive ? 'text-orange-700' : 'text-gray-900'}`}>
+                  {streak.count} {streak.count === 1 ? 'day' : 'days'}
+                </p>
+                {streak.count > 0 && (
+                  <p className="text-xs text-gray-400">
+                    Best: {streak.longest}
+                  </p>
+                )}
               </div>
             </div>
           </div>

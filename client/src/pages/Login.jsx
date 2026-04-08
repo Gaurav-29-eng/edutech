@@ -21,6 +21,16 @@ function Login() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       window.dispatchEvent(new Event('userChanged'));
+      
+      // Update study streak on login (fire and forget)
+      try {
+        await axios.post(`${API}/api/auth/streak`, {}, {
+          headers: { Authorization: `Bearer ${response.data.token}` }
+        });
+      } catch (streakErr) {
+        console.log('Streak update failed:', streakErr);
+      }
+      
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
