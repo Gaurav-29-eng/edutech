@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-function VideoPlayer({ videoUrl, title }) {
+function VideoPlayer({ videoUrl, title, initialPosition = 0 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [watermarkPosition, setWatermarkPosition] = useState({ top: 10, left: 10 });
@@ -133,6 +133,9 @@ function VideoPlayer({ videoUrl, title }) {
   }
 
   // Secure embed URL with privacy and control parameters
+  // Add start time for resume functionality (if initialPosition is provided)
+  const startParam = initialPosition > 0 ? `start=${Math.floor(initialPosition)}&` : '';
+  
   const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?` + 
     `rel=0&` +                    // No related videos
     `modestbranding=1&` +        // Minimal YouTube branding
@@ -142,6 +145,7 @@ function VideoPlayer({ videoUrl, title }) {
     `iv_load_policy=3&` +        // Hide video annotations
     `cc_load_policy=0&` +        // Hide closed captions by default
     `playsinline=1&` +           // Play inline on mobile
+    `${startParam}` +            // Start at specific time (resume)
     `origin=${encodeURIComponent(window.location.origin)}`; // Restrict origin
 
   // Calculate watermark style based on position

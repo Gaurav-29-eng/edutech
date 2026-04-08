@@ -53,6 +53,9 @@ function CourseDetail() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [screenshot, setScreenshot] = useState(null);
   const [uploadingPayment, setUploadingPayment] = useState(false);
+  const [resumeData, setResumeData] = useState(null);
+  const [videoPosition, setVideoPosition] = useState(0);
+  const [savingProgress, setSavingProgress] = useState(false);
 
   useEffect(() => {
     fetchCourse();
@@ -80,6 +83,11 @@ function CourseDetail() {
             headers: { Authorization: `Bearer ${token}` }
           });
           setPaymentStatus(paymentRes.data.status);
+          
+          // If payment approved, fetch resume info
+          if (paymentRes.data.status === 'approved') {
+            fetchResumeInfo();
+          }
         } catch (err) {
           console.log('No payment found');
           setPaymentStatus('not_paid');
@@ -89,6 +97,46 @@ function CourseDetail() {
       console.error('Error fetching course:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchResumeInfo = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+      const response = await axios.get(`${API}/api/courses/${id}/resume-info`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setResumeData(response.data);
+      
+      // If there's resume data, set the lecture and position
+      if (response.data.hasResumeData && response.data.lecture) {
+        const lectureIndex = response.data.lectureIndex || 0;
+        setSelectedLecture(lectureIndex);
+        setVideoPosition(response.data.videoPosition || 0);
+      }
+    } catch (error) {
+      console.log('No resume data available');
+    }
+  };
+
+  const saveProgress = async (lectureId, position) => {
+    const token = localStorage.getItem('token');
+    if (!token || !course) return;
+    
+    setSavingProgress(true);
+    try {
+      await axios.post(`${API}/api/courses/${id}/progress`, {
+        lectureId,
+        videoPosition: Math.floor(position)
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    } finally {
+      setSavingProgress(false);
     }
   };
 
@@ -233,10 +281,50 @@ function CourseDetail() {
           {/* Video Player Section - Only for approved payments */}
           {paymentStatus === 'approved' && currentLecture && (
             <div className="mb-6 sm:mb-8 video-container">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
-                Now Playing: {currentLecture.title}
-              </h3>
-              <VideoPlayer videoUrl={currentLecture.videoUrl} title={currentLecture.title} />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Now Playing: {currentLecture.title}
+                </h3>
+                {savingProgress && (
+                  <span className="text-xs text-gray-500 flex items-center">
+                    <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving progress...
+                  </span>
+                )}
+              </div>
+              
+              {/* Resume Learning Button */}
+              {resumeData?.hasResumeData && 
+               resumeData.lecture?._id === currentLecture._id && 
+               resumeData.videoPosition > 0 && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-700 font-medium">
+                      Continue where you left off?
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Last watched: {Math.floor(resumeData.videoPosition / 60)}m {resumeData.videoPosition % 60}s
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Reload video at position
+                      setVideoPosition(resumeData.videoPosition);
+                      // Clear resume data for this button
+                      setResumeData(prev => ({ ...prev, hasResumeData: false }));
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Resume
+                  </button>
+                </div>
+              )}
+              
+              <VideoPlayer 
+                videoUrl={currentLecture.videoUrl} 
+                title={currentLecture.title} 
+                initialPosition={videoPosition}
+              />
               
               {/* Download Notes Button */}
               {currentLecture.notesUrl && (
@@ -263,7 +351,20 @@ function CourseDetail() {
                 {course.lectures.map((lecture, index) => (
                   <div
                     key={index}
-                    onClick={() => paymentStatus === 'approved' && setSelectedLecture(index)}
+                    onClick={() => {
+                      if (paymentStatus === 'approved') {
+                        // Save progress before switching
+                        if (course.lectures[selectedLecture]) {
+                          saveProgress(
+                            course.lectures[selectedLecture]._id, 
+                            videoPosition
+                          );
+                        }
+                        // Reset video position and switch lecture
+                        setVideoPosition(0);
+                        setSelectedLecture(index);
+                      }
+                    }}
                     className={`bg-white rounded-lg p-3 sm:p-4 flex items-center gap-3 sm:gap-4 min-h-[48px] cursor-pointer transition-all ${
                       selectedLecture === index ? 'ring-2 ring-blue-500' : 'hover:shadow-md'
                     } ${paymentStatus !== 'approved' ? 'opacity-75' : ''}`}

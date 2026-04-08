@@ -44,6 +44,14 @@ const userSchema = new mongoose.Schema({
     lastWatchedLecture: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Lecture'
+    },
+    lastVideoPosition: {
+      type: Number,
+      default: 0
+    },
+    lastWatchedAt: {
+      type: Date,
+      default: Date.now
     }
   }],
   defaultUpiId: {

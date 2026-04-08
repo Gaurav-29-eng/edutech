@@ -260,7 +260,107 @@ router.get('/:id/resume', protect, async (req, res) => {
       totalLectures: lectures.length,
       completedLectures: completedLectures.length,
       isCompleted: completedLectures.includes(nextLecture._id.toString()),
-      progress: Math.round((completedLectures.length / lectures.length) * 100)
+      progress: Math.round((completedLectures.length / lectures.length) * 100),
+      videoPosition: enrolledCourse.lastVideoPosition || 0
+    });
+  } catch (error) {
+    console.error('Course route error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Save video progress (student only)
+router.post('/:id/progress', protect, async (req, res) => {
+  try {
+    const { lectureId, videoPosition } = req.body;
+    const courseId = req.params.id;
+    
+    if (!lectureId || videoPosition === undefined) {
+      return res.status(400).json({ message: 'Lecture ID and video position are required' });
+    }
+
+    const user = await User.findById(req.userId);
+    
+    // Find enrolled course
+    const enrolledCourse = user.enrolledCourses.find(
+      ec => ec.course.toString() === courseId
+    );
+    
+    if (!enrolledCourse) {
+      return res.status(403).json({ message: 'Not enrolled in this course' });
+    }
+    
+    // Update last watched info
+    enrolledCourse.lastWatchedLecture = lectureId;
+    enrolledCourse.lastVideoPosition = Math.floor(videoPosition);
+    enrolledCourse.lastWatchedAt = new Date();
+    
+    await user.save();
+    
+    res.json({
+      message: 'Progress saved',
+      lectureId,
+      videoPosition: enrolledCourse.lastVideoPosition,
+      lastWatchedAt: enrolledCourse.lastWatchedAt
+    });
+  } catch (error) {
+    console.error('Course route error:', error);
+    res.status(500).json({ message: 'Server error saving progress', error: error.message });
+  }
+});
+
+// Get resume info for a course (protected)
+router.get('/:id/resume-info', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const course = await Course.findById(req.params.id);
+    
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Check if user is enrolled
+    const enrolledCourse = user.enrolledCourses.find(
+      ec => ec.course.toString() === req.params.id
+    );
+    
+    if (!enrolledCourse) {
+      return res.status(403).json({ message: 'Not enrolled in this course' });
+    }
+    
+    const lectures = course.lectures || [];
+    
+    // Find the lecture to resume from
+    let resumeLecture = null;
+    let resumeIndex = 0;
+    let videoPosition = 0;
+    
+    if (enrolledCourse.lastWatchedLecture && lectures.length > 0) {
+      const lastIndex = lectures.findIndex(
+        l => l._id.toString() === enrolledCourse.lastWatchedLecture.toString()
+      );
+      
+      if (lastIndex >= 0) {
+        resumeIndex = lastIndex;
+        resumeLecture = lectures[lastIndex];
+        videoPosition = enrolledCourse.lastVideoPosition || 0;
+      }
+    }
+    
+    // If no last watched, start from first
+    if (!resumeLecture && lectures.length > 0) {
+      resumeLecture = lectures[0];
+      resumeIndex = 0;
+      videoPosition = 0;
+    }
+    
+    res.json({
+      hasResumeData: !!enrolledCourse.lastWatchedLecture,
+      lecture: resumeLecture,
+      lectureIndex: resumeIndex,
+      videoPosition,
+      lastWatchedAt: enrolledCourse.lastWatchedAt,
+      progress: enrolledCourse.progress || 0
     });
   } catch (error) {
     console.error('Course route error:', error);
