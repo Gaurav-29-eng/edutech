@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.routes.js';
 import courseRoutes from './routes/course.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import noteRoutes from './routes/note.routes.js';
+import aiRoutes from './routes/ai.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'EduTech API is running' });

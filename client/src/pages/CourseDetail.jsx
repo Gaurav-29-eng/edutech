@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import VideoPlayer from '../components/VideoPlayer';
 import AdminUpload from '../components/AdminUpload';
+import AITutor from '../components/AITutor';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -488,6 +489,11 @@ function CourseDetail() {
           </div>
         </div>
       </div>
+
+      {/* AI Tutor - Only show for approved payments */}
+      {paymentStatus === 'approved' && (
+        <AITutor context={course?.title} />
+      )}
 
       {/* Payment Modal */}
       {showPaymentModal && (
